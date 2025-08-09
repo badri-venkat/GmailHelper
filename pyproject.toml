@@ -1,12 +1,15 @@
 [tool.poetry]
 name = "gmailhelper"
 version = "0.1.0"
-description = ""
-authors = ["badri <badrinathv@apptio.com>"]
+description = "A simple python project to manage gmail programmatically"
+authors = ["badri <badri.twok@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+black = "^25.1.0"
+isort = "^6.0.1"
+pydantic = "^2.11.7"
 
 
 [build-system]
