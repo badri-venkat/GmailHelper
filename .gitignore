@@ -1,0 +1,4 @@
+.credentials.json
+.venv/
+gmail_helper/api/email_fetcher/emails.db
+gmail_helper/api/email_fetcher/.token.json
