@@ -30,8 +30,6 @@ class RulesProcessor:
         self._label_cache: Dict[str, str] = {}  # name_lower -> labelId
         self._labels_loaded = False
 
-    # -------------------- Public API --------------------
-
     def load_rules(self) -> List[Rule]:
         with open(self.rules_file, "r") as f:
             data = json.load(f)
@@ -60,8 +58,6 @@ class RulesProcessor:
 
         LOG.info("Completed rules run: %d actions executed/logged", total_actions)
         return total_actions
-
-    # -------------------- Matching --------------------
 
     def _matches(self, rule: Rule, email: dict) -> bool:
         results = [self._eval_condition(c, email) for c in rule.conditions]
@@ -114,8 +110,6 @@ class RulesProcessor:
 
         return False
 
-    # -------------------- Actions --------------------
-
     def _execute_actions(self, email: dict, rule: Rule) -> int:
         count = 0
         for action in rule.actions:
@@ -167,8 +161,6 @@ class RulesProcessor:
         except Exception as e:
             LOG.error("    [ACTION] mark_as_unread FAILED for %s: %s", email["id"], e)
             return 0
-
-    # ---- move_message ----
 
     def _act_move_message(self, email: dict, mailbox: str) -> int:
         """
