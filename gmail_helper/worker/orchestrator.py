@@ -46,10 +46,7 @@ class GmailOrchestrator:
         stored = 0
         for item in msgs:
             full = self.gmail.get_message_metadata(item["id"])
-            headers = {
-                h["name"]: h["value"]
-                for h in full.get("payload", {}).get("headers", [])
-            }
+            headers = {h["name"]: h["value"] for h in full.get("payload", {}).get("headers", [])}
 
             email = {
                 "id": full.get("id", ""),

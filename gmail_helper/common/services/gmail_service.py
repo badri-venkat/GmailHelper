@@ -48,13 +48,9 @@ class GmailClient:
                 creds.refresh(Request())
             else:
                 if not os.path.exists(self.credentials_file):
-                    raise FileNotFoundError(
-                        "Gmail credentials file not found at %s" % self.credentials_file
-                    )
+                    raise FileNotFoundError("Gmail credentials file not found at %s" % self.credentials_file)
                 LOG.info("Starting Gmail OAuth flow...")
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_file, self.scopes
-                )
+                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, self.scopes)
                 creds = flow.run_local_server(port=0)
             with open(self.token_file, "w") as f:
                 f.write(creds.to_json())
@@ -80,13 +76,7 @@ class GmailClient:
         return res.get("messages", []) or []
 
     def get_message_metadata(self, msg_id: str, user_id: str = "me") -> Dict:
-        return (
-            self.service()
-            .users()
-            .messages()
-            .get(userId=user_id, id=msg_id, format="metadata")
-            .execute()
-        )
+        return self.service().users().messages().get(userId=user_id, id=msg_id, format="metadata").execute()
 
     def modify_message(
         self,
@@ -99,13 +89,7 @@ class GmailClient:
             "addLabelIds": add_label_ids or [],
             "removeLabelIds": remove_label_ids or [],
         }
-        return (
-            self.service()
-            .users()
-            .messages()
-            .modify(userId=user_id, id=msg_id, body=body)
-            .execute()
-        )
+        return self.service().users().messages().modify(userId=user_id, id=msg_id, body=body).execute()
 
     # -------- Labels --------
 
@@ -119,6 +103,4 @@ class GmailClient:
             "labelListVisibility": "labelShow",
             "messageListVisibility": "show",
         }
-        return (
-            self.service().users().labels().create(userId=user_id, body=body).execute()
-        )
+        return self.service().users().labels().create(userId=user_id, body=body).execute()

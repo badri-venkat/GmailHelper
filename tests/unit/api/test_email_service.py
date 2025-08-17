@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from gmail_helper.api.email_service.models import (EmailResponse,
-                                                   EmailsListResponse)
+from gmail_helper.api.email_service.models import EmailResponse, EmailsListResponse
 from gmail_helper.api.email_service.service import EmailService
 
 
@@ -65,4 +64,3 @@ class TestEmailService(unittest.TestCase):
 
         self.mock_store.get_email_by_id.assert_called_once_with("does-not-exist")
         self.assertIsNone(resp)
-

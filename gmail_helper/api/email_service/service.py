@@ -1,7 +1,6 @@
 from typing import Optional
 
-from gmail_helper.api.email_service.models import (EmailResponse,
-                                                   EmailsListResponse)
+from gmail_helper.api.email_service.models import EmailResponse, EmailsListResponse
 from gmail_helper.common.contracts.emails_interface import EmailsInterface
 
 

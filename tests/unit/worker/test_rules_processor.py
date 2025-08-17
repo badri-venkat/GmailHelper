@@ -34,9 +34,7 @@ def make_email(eid="e1", subject="hello"):
         "subject": subject,
         "sender": "a@example.com",
         "snippet": "body",
-        "received_datetime": datetime.now(timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z"),
+        "received_datetime": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
 
@@ -49,9 +47,7 @@ class TestRulesProcessor(unittest.TestCase):
         rp = RulesProcessor(self.mock_store, gmail_client=None)
         rule = MockRule("read", [MockAction(ActionType.mark_as_read)])
 
-        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(
-            rp, "_matches", return_value=True
-        ):
+        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(rp, "_matches", return_value=True):
             count = rp.apply_rules(limit=5)
 
         self.assertEqual(count, 1)
@@ -60,29 +56,21 @@ class TestRulesProcessor(unittest.TestCase):
         rp = RulesProcessor(self.mock_store, gmail_client=self.mock_gmail)
         rule = MockRule("read", [MockAction(ActionType.mark_as_read)])
 
-        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(
-            rp, "_matches", return_value=True
-        ):
+        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(rp, "_matches", return_value=True):
             count = rp.apply_rules(limit=1)
 
         self.assertEqual(count, 1)
-        self.mock_gmail.modify_message.assert_called_once_with(
-            "e1", add_label_ids=[], remove_label_ids=["UNREAD"]
-        )
+        self.mock_gmail.modify_message.assert_called_once_with("e1", add_label_ids=[], remove_label_ids=["UNREAD"])
 
     def test_mark_as_unread_with_gmail_calls_modify(self):
         rp = RulesProcessor(self.mock_store, gmail_client=self.mock_gmail)
         rule = MockRule("unread", [MockAction(ActionType.mark_as_unread)])
 
-        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(
-            rp, "_matches", return_value=True
-        ):
+        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(rp, "_matches", return_value=True):
             count = rp.apply_rules(limit=1)
 
         self.assertEqual(count, 1)
-        self.mock_gmail.modify_message.assert_called_once_with(
-            "e1", add_label_ids=["UNREAD"], remove_label_ids=[]
-        )
+        self.mock_gmail.modify_message.assert_called_once_with("e1", add_label_ids=["UNREAD"], remove_label_ids=[])
 
     def test_move_message_inbox(self):
         """Moving to Inbox should add INBOX, not remove it"""
@@ -90,9 +78,7 @@ class TestRulesProcessor(unittest.TestCase):
         rp._label_cache = {"inbox": "INBOX"}
         rule = MockRule("move", [MockAction(ActionType.move_message, "Inbox")])
 
-        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(
-            rp, "_matches", return_value=True
-        ):
+        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(rp, "_matches", return_value=True):
             count = rp.apply_rules(limit=1)
 
         self.assertEqual(count, 1)
@@ -107,9 +93,7 @@ class TestRulesProcessor(unittest.TestCase):
         rp = RulesProcessor(self.mock_store, gmail_client=self.mock_gmail)
         rule = MockRule("move", [MockAction(ActionType.move_message, "Work")])
 
-        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(
-            rp, "_matches", return_value=True
-        ):
+        with patch.object(rp, "load_rules", return_value=[rule]), patch.object(rp, "_matches", return_value=True):
             rp.apply_rules(limit=1)
 
         self.mock_gmail.create_label.assert_called_once_with("Work")

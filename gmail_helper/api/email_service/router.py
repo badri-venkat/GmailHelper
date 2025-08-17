@@ -1,7 +1,6 @@
 from typing import Optional
 
-from gmail_helper.api.email_service.models import (EmailResponse,
-                                                   EmailsListResponse)
+from gmail_helper.api.email_service.models import EmailResponse, EmailsListResponse
 from gmail_helper.api.email_service.service import EmailService
 from gmail_helper.common.utils.api_framework import api_get, api_router
 
@@ -16,9 +15,7 @@ class EmailRouter:
     def __init__(self, service: EmailService):
         self.svc = service
 
-    @api_get(
-        "/last", response_model=EmailsListResponse, summary="Get last N stored emails"
-    )
+    @api_get("/last", response_model=EmailsListResponse, summary="Get last N stored emails")
     def last(self, n: int = 10):
         return self.svc.get_last_emails(n)
 

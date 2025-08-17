@@ -8,9 +8,7 @@ class TestGmailOrchestrator(unittest.TestCase):
     def setUp(self):
         self.mock_gmail = MagicMock()
         self.mock_store = MagicMock()
-        self.orch = GmailOrchestrator(
-            store=self.mock_store, gmail_client=self.mock_gmail
-        )
+        self.orch = GmailOrchestrator(store=self.mock_store, gmail_client=self.mock_gmail)
 
     def test_fetch_and_store_no_messages(self):
         """If Gmail returns no messages, nothing is inserted"""
@@ -20,9 +18,7 @@ class TestGmailOrchestrator(unittest.TestCase):
 
         self.assertEqual(count, 0)
         self.mock_store.insert_email.assert_not_called()
-        self.mock_gmail.list_messages.assert_called_once_with(
-            label_ids=["INBOX"], max_results=5
-        )
+        self.mock_gmail.list_messages.assert_called_once_with(label_ids=["INBOX"], max_results=5)
 
     def test_fetch_and_store_with_messages(self):
         """Fetched messages should be transformed and stored"""
