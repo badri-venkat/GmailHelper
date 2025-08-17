@@ -38,7 +38,7 @@ class RulesProcessor:
         rules_raw = data.get("rules", data) if isinstance(data, dict) else data
         return [Rule(**r) for r in rules_raw]
 
-    def apply_rules(self, limit: int = 200) -> int:
+    def apply_rules(self, limit: int = 10) -> int:
         rules = self.load_rules()
         emails = self.store.get_last_n_emails(limit)
         total_actions = 0

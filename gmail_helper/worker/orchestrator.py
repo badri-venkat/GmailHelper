@@ -99,8 +99,8 @@ class GmailOrchestrator:
         LOG.info("Stored %d messages into DB at %s", stored, config.DB_PATH)
         return stored
 
-    def run_rules(self, rules_file: Optional[str] = None, limit: int = 200) -> int:
-        # ✅ pass the Gmail service so RulesProcessor can call modify for mark_as_read
+    def run_rules(self, rules_file: Optional[str] = None, limit: int = 10) -> int:
+        # pass the Gmail service so RulesProcessor can call modify for mark_as_read
         rp = RulesProcessor(
             self.store,
             rules_file=rules_file or config.RULES_FILE,
@@ -112,5 +112,8 @@ class GmailOrchestrator:
 if __name__ == "__main__":
     orch = GmailOrchestrator()
     orch.fetch_and_store()
+
+if __name__ == "__main__":
+    orch = GmailOrchestrator()
     if os.path.exists(config.RULES_FILE):
         orch.run_rules()
