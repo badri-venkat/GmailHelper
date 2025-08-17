@@ -7,8 +7,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from gmail_helper.common.config import config
-from gmail_helper.common.utils.logger import get_logger
 from gmail_helper.common.utils.dateutils import parse_rfc2822_to_iso
+from gmail_helper.common.utils.logger import get_logger
 from gmail_helper.worker.emails_store import EmailsStore
 from gmail_helper.worker.rules_processor import RulesProcessor
 
@@ -28,7 +28,9 @@ class GmailOrchestrator:
     def _authenticate(self):
         creds = None
         if os.path.exists(config.TOKEN_FILE):
-            creds = Credentials.from_authorized_user_file(config.TOKEN_FILE, config.SCOPES)
+            creds = Credentials.from_authorized_user_file(
+                config.TOKEN_FILE, config.SCOPES
+            )
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -37,7 +39,8 @@ class GmailOrchestrator:
             else:
                 if not os.path.exists(config.CREDENTIALS_FILE):
                     raise FileNotFoundError(
-                        "Gmail credentials file not found at %s" % config.CREDENTIALS_FILE
+                        "Gmail credentials file not found at %s"
+                        % config.CREDENTIALS_FILE
                     )
                 LOG.info("Starting Gmail OAuth flow...")
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -77,7 +80,10 @@ class GmailOrchestrator:
                 .get(userId="me", id=item["id"], format="metadata")
                 .execute()
             )
-            headers = {h["name"]: h["value"] for h in full.get("payload", {}).get("headers", [])}
+            headers = {
+                h["name"]: h["value"]
+                for h in full.get("payload", {}).get("headers", [])
+            }
 
             email = {
                 "id": full.get("id", ""),
@@ -95,7 +101,11 @@ class GmailOrchestrator:
 
     def run_rules(self, rules_file: Optional[str] = None, limit: int = 200) -> int:
         # ✅ pass the Gmail service so RulesProcessor can call modify for mark_as_read
-        rp = RulesProcessor(self.store, rules_file=rules_file or config.RULES_FILE, gmail_service=self.service)
+        rp = RulesProcessor(
+            self.store,
+            rules_file=rules_file or config.RULES_FILE,
+            gmail_service=self.service,
+        )
         return rp.apply_rules(limit=limit)
 
 
