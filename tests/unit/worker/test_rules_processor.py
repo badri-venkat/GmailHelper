@@ -2,8 +2,8 @@ import unittest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
-from gmail_helper.common.contracts.rules_contract import ActionType, Rule
-from gmail_helper.worker.rules_processor import RulesProcessor
+from gmail_helper.api.email_service.rules_processor import RulesProcessor
+from gmail_helper.common.contracts.rules_contract import ActionType
 
 
 class MockAction:

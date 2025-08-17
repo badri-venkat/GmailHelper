@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from gmail_helper.worker.orchestrator import GmailOrchestrator
+from gmail_helper.api.email_service.orchestrator import GmailOrchestrator
 
 
 class TestGmailOrchestrator(unittest.TestCase):

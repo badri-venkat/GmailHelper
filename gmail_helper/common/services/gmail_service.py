@@ -58,8 +58,6 @@ class GmailClient:
         LOG.info("Gmail auth OK")
         return build("gmail", "v1", credentials=creds)
 
-    # -------- Messages --------
-
     def list_messages(
         self,
         user_id: str = "me",
@@ -90,8 +88,6 @@ class GmailClient:
             "removeLabelIds": remove_label_ids or [],
         }
         return self.service().users().messages().modify(userId=user_id, id=msg_id, body=body).execute()
-
-    # -------- Labels --------
 
     def list_labels(self, user_id: str = "me") -> List[Dict]:
         res = self.service().users().labels().list(userId=user_id).execute()

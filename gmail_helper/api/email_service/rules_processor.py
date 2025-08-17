@@ -23,8 +23,6 @@ class RulesProcessor:
         self._label_cache: Dict[str, str] = {}
         self._labels_loaded = False
 
-    # -------- Rules lifecycle --------
-
     def load_rules(self) -> List[Rule]:
         with open(self.rules_file, "r") as f:
             data = json.load(f)
@@ -52,8 +50,6 @@ class RulesProcessor:
 
         LOG.info("Completed rules run: %d actions executed/logged", total_actions)
         return total_actions
-
-    # -------- Matching --------
 
     def _matches(self, rule: Rule, email: dict) -> bool:
         results = [self._eval_condition(c, email) for c in rule.conditions]
@@ -105,8 +101,6 @@ class RulesProcessor:
             return False
 
         return False
-
-    # -------- Actions --------
 
     def _execute_actions(self, email: dict, rule: Rule) -> int:
         count = 0
@@ -198,8 +192,6 @@ class RulesProcessor:
                 e,
             )
             return 0
-
-    # -------- Labels helpers --------
 
     def _warm_labels_cache(self) -> None:
         if self._labels_loaded or self.gmail is None:
