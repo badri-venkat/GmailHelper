@@ -1,13 +1,16 @@
 import json
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import List, Optional
 
-from gmail_helper.common.config import config
-from gmail_helper.common.contracts.rules_contract import (ActionType,
-                                                          DatePredicate,
-                                                          FieldName, Rule,
-                                                          StringPredicate)
+from gmail_helper.common.contracts.rules_contract import (
+    Rule,
+    FieldName,
+    StringPredicate,
+    DatePredicate,
+    ActionType,
+)
 from gmail_helper.common.utils.logger import get_logger
+from gmail_helper.common.config import config
 
 LOG = get_logger(__name__)
 
@@ -15,12 +18,13 @@ LOG = get_logger(__name__)
 class RulesProcessor:
     """
     Loads rules from a JSON file and applies them to emails from the store.
-    Actions are LOGGED (no Gmail writes).
+    For mark_as_read, calls Gmail modify API when gmail_service is provided.
     """
 
-    def __init__(self, store, rules_file: str = None):
+    def __init__(self, store, rules_file: str = None, gmail_service: Optional[object] = None):
         self.store = store
         self.rules_file = rules_file or config.RULES_FILE
+        self.gmail = gmail_service  # googleapiclient.discovery.Resource or None
 
     def load_rules(self) -> List[Rule]:
         with open(self.rules_file, "r") as f:
@@ -28,7 +32,7 @@ class RulesProcessor:
         rules_raw = data.get("rules", data) if isinstance(data, dict) else data
         return [Rule(**r) for r in rules_raw]
 
-    def apply_rules(self, limit: int = 10) -> int:
+    def apply_rules(self, limit: int = 200) -> int:
         rules = self.load_rules()
         emails = self.store.get_last_n_emails(limit)
         total_actions = 0
@@ -37,13 +41,9 @@ class RulesProcessor:
             LOG.info("Evaluating rule: %s", rule.description)
             for email in emails:
                 if self._matches(rule, email):
-                    LOG.info(
-                        " ✓ Matched email %s (%s)",
-                        email["id"],
-                        email.get("subject", ""),
-                    )
+                    LOG.info("  ✓ Matched email %s (%s)", email['id'], email.get('subject', ''))
                     total_actions += self._execute_actions(email, rule)
-        LOG.info("Completed rules run: %d actions proposed", total_actions)
+        LOG.info("Completed rules run: %d actions executed/logged", total_actions)
         return total_actions
 
     def _matches(self, rule: Rule, email: dict) -> bool:
@@ -101,23 +101,42 @@ class RulesProcessor:
         count = 0
         for action in rule.actions:
             if action.type == ActionType.mark_as_read:
-                LOG.info("    [ACTION] mark_as_read -> email %s", email["id"])
+                # If we have a Gmail service, perform the API call. Otherwise log.
+                if self.gmail is not None:
+                    try:
+                        self.gmail.users().messages().modify(
+                            userId="me",
+                            id=email["id"],
+                            body={"removeLabelIds": ["UNREAD"]},
+                        ).execute()
+                        LOG.info("    [ACTION] mark_as_read -> email %s (APPLIED)", email['id'])
+                    except Exception as e:
+                        LOG.error("    [ACTION] mark_as_read FAILED for %s: %s", email['id'], e)
+                else:
+                    LOG.info("    [ACTION] mark_as_read (LOG ONLY) -> email %s", email['id'])
                 count += 1
+
             elif action.type == ActionType.mark_as_unread:
-                LOG.info("    [ACTION] mark_as_unread -> email %s", email["id"])
+                if self.gmail is not None:
+                    try:
+                        self.gmail.users().messages().modify(
+                            userId="me",
+                            id=email["id"],
+                            body={"addLabelIds": ["UNREAD"]},
+                        ).execute()
+                        LOG.info("    [ACTION] mark_as_unread -> email %s (APPLIED)", email['id'])
+                    except Exception as e:
+                        LOG.error("    [ACTION] mark_as_unread FAILED for %s: %s", email['id'], e)
+                else:
+                    LOG.info("    [ACTION] mark_as_unread (LOG ONLY) -> email %s", email['id'])
                 count += 1
+
             elif action.type == ActionType.move_message:
+                # Still keeping "move" as log-only for simplicity (requires label mgmt)
                 mailbox = action.mailbox or "Inbox"
-                LOG.info(
-                    "    [ACTION] move_message -> email %s to '%s'",
-                    email["id"],
-                    mailbox,
-                )
+                LOG.info("    [ACTION] move_message (LOG ONLY) -> email %s to '%s'", email['id'], mailbox)
                 count += 1
+
             else:
-                LOG.warning(
-                    "    [ACTION] unknown action %s for email %s",
-                    action.type,
-                    email["id"],
-                )
+                LOG.warning("    [ACTION] unknown action %s for email %s", action.type, email['id'])
         return count
