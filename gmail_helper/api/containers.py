@@ -17,22 +17,22 @@ class ApiContainer(containers.DeclarativeContainer):
         ]
     )
 
-    # ---- Configuration ----
+    # Config file
     config = providers.Singleton(Config)
 
-    # ---- Gateways / Stores (simulated RPC today) ----
+    # Stores
     emails_store = providers.Singleton(
         EmailsStore,
         db_path=providers.Callable(lambda c: c.DB_PATH, config),
     )  # type: providers.Provider[EmailsInterface]
 
-    # ---- Services ----
+    # Services
     email_service = providers.Factory(
         EmailService,
         store=emails_store,
     )
 
-    # ---- Routers (controllers) ----
+    # Routers
     email_router = providers.Factory(
         EmailRouter,
         service=email_service,
