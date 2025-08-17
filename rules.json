@@ -1,0 +1,16 @@
+  {
+  "rules": [
+    {
+      "description": "From contains hdfc alerts → mark read & move",
+      "match": "all",
+      "conditions": [
+        {"field": "From", "predicate": "contains", "value": "alerts@hdfcbank.net"},
+        {"field": "DateReceived", "predicate": "less_than_days", "value": 1}
+      ],
+      "actions": [
+        {"type": "mark_as_read"},
+        {"type": "move_message", "mailbox": "Receipts"}
+      ]
+    }
+  ]
+}
