@@ -73,7 +73,8 @@ class GmailOrchestrator:
 
 
 if __name__ == "__main__":
-    orch = GmailOrchestrator()
-    orch.fetch_and_store()
+    store = EmailsStore(db_path="emails.db")
+    orch = GmailOrchestrator(store)
+    # orch.fetch_and_store()
     if os.path.exists(config.RULES_FILE):
         orch.run_rules()

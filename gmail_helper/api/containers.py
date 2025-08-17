@@ -42,5 +42,5 @@ class ApiContainer(containers.DeclarativeContainer):
     # Routers
     email_router = providers.Factory(
         EmailRouter,
-        service=email_service,
+        email_service=email_service,
     )
