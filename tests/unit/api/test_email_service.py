@@ -12,7 +12,7 @@ class TestEmailService(unittest.TestCase):
         self.service = EmailService(self.mock_store)
 
     def test_get_last_emails_returns_wrapped_list(self):
-        # Fake store returns list of dicts
+        # Mock store returns list of dicts
         self.mock_store.get_last_n_emails.return_value = [
             {
                 "id": "1",
@@ -66,6 +66,3 @@ class TestEmailService(unittest.TestCase):
         self.mock_store.get_email_by_id.assert_called_once_with("does-not-exist")
         self.assertIsNone(resp)
 
-
-if __name__ == "__main__":
-    unittest.main()
