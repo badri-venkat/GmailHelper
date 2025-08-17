@@ -3,12 +3,13 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional
 
 from gmail_helper.common.config import config
+from gmail_helper.common.contracts.emails_interface import EmailsInterface
 from gmail_helper.common.utils.logger import get_logger
 
 LOG = get_logger(__name__)
 
 
-class EmailsStore:
+class EmailsStore(EmailsInterface):
     """
     SQLite implementation of EmailsInterface.
     Returns dictionaries for easy API serialization.

@@ -7,6 +7,7 @@ from gmail_helper.common.contracts.rules_contract import (ActionType,
                                                           DatePredicate,
                                                           FieldName, Rule,
                                                           StringPredicate)
+from gmail_helper.common.services.gmail_service import GmailClient
 from gmail_helper.common.utils.logger import get_logger
 
 LOG = get_logger(__name__)
@@ -14,21 +15,20 @@ LOG = get_logger(__name__)
 
 class RulesProcessor:
     """
-    Loads rules from a JSON file and applies them to emails from the store.
-    - mark_as_read / mark_as_unread use Gmail modify API if gmail_service is provided; else logs.
-    - move_message:
-        * If gmail_service is provided, ensures the label exists, adds it, and removes INBOX (archive).
-        * Else, logs only.
+    Loads rules from JSON and applies them to emails from the store.
+    Uses GmailClient for real actions (mark_as_read/unread, move via labels).
     """
 
     def __init__(
-        self, store, rules_file: str = None, gmail_service: Optional[object] = None
+        self, store, rules_file: str = None, gmail_client: Optional[GmailClient] = None
     ):
         self.store = store
         self.rules_file = rules_file or config.RULES_FILE
-        self.gmail = gmail_service  # googleapiclient.discovery.Resource or None
-        self._label_cache: Dict[str, str] = {}  # name_lower -> labelId
+        self.gmail = gmail_client  # GmailClient or None
+        self._label_cache: Dict[str, str] = {}
         self._labels_loaded = False
+
+    # -------- Rules lifecycle --------
 
     def load_rules(self) -> List[Rule]:
         with open(self.rules_file, "r") as f:
@@ -36,12 +36,11 @@ class RulesProcessor:
         rules_raw = data.get("rules", data) if isinstance(data, dict) else data
         return [Rule(**r) for r in rules_raw]
 
-    def apply_rules(self, limit: int = 10) -> int:
+    def apply_rules(self, limit: int = 20) -> int:
         rules = self.load_rules()
         emails = self.store.get_last_n_emails(limit)
         total_actions = 0
 
-        # Preload labels once if we can act
         if self.gmail is not None:
             self._warm_labels_cache()
 
@@ -58,6 +57,8 @@ class RulesProcessor:
 
         LOG.info("Completed rules run: %d actions executed/logged", total_actions)
         return total_actions
+
+    # -------- Matching --------
 
     def _matches(self, rule: Rule, email: dict) -> bool:
         results = [self._eval_condition(c, email) for c in rule.conditions]
@@ -110,6 +111,8 @@ class RulesProcessor:
 
         return False
 
+    # -------- Actions --------
+
     def _execute_actions(self, email: dict, rule: Rule) -> int:
         count = 0
         for action in rule.actions:
@@ -128,18 +131,14 @@ class RulesProcessor:
                 )
         return count
 
-    # ---- mark_as_read / mark_as_unread ----
-
     def _act_mark_read(self, email: dict) -> int:
         if self.gmail is None:
             LOG.info("    [ACTION] mark_as_read (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
-            self.gmail.users().messages().modify(
-                userId="me",
-                id=email["id"],
-                body={"removeLabelIds": ["UNREAD"]},
-            ).execute()
+            self.gmail.modify_message(
+                email["id"], add_label_ids=[], remove_label_ids=["UNREAD"]
+            )
             LOG.info("    [ACTION] mark_as_read -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
@@ -151,11 +150,9 @@ class RulesProcessor:
             LOG.info("    [ACTION] mark_as_unread (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
-            self.gmail.users().messages().modify(
-                userId="me",
-                id=email["id"],
-                body={"addLabelIds": ["UNREAD"]},
-            ).execute()
+            self.gmail.modify_message(
+                email["id"], add_label_ids=["UNREAD"], remove_label_ids=[]
+            )
             LOG.info("    [ACTION] mark_as_unread -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
@@ -164,10 +161,9 @@ class RulesProcessor:
 
     def _act_move_message(self, email: dict, mailbox: str) -> int:
         """
-        Gmail 'move' is modeled as:
-          - Add the target label (create if needed for user labels).
-          - Remove 'INBOX' so it gets archived out of the inbox.
-        Special-case: if mailbox == 'Inbox', we simply add INBOX (ensure present) and do NOT remove it.
+        'Move' implemented as:
+          - Add target label (create if missing) for user labels.
+          - Remove INBOX (archive) unless moving to Inbox itself.
         """
         if self.gmail is None:
             LOG.info(
@@ -176,40 +172,33 @@ class RulesProcessor:
                 mailbox,
             )
             return 1
-
         try:
-            target_label_id, remove_inbox = self._resolve_move_target(mailbox)
-            body = {"addLabelIds": [], "removeLabelIds": []}
-
-            if target_label_id and target_label_id != "INBOX":
-                body["addLabelIds"].append(target_label_id)
-            elif target_label_id == "INBOX":
-                # moving to Inbox: ensure INBOX present; do NOT remove it
-                body["addLabelIds"].append("INBOX")
-
+            label_id, remove_inbox = self._resolve_move_target(mailbox)
+            add = []
+            rem = []
+            if label_id and label_id != "INBOX":
+                add.append(label_id)
+            elif label_id == "INBOX":
+                add.append("INBOX")
             if remove_inbox:
-                body["removeLabelIds"].append("INBOX")
+                rem.append("INBOX")
 
-            # Avoid empty modify calls
-            if not body["addLabelIds"] and not body["removeLabelIds"]:
+            if not add and not rem:
                 LOG.info(
                     "    [ACTION] move_message -> email %s already in desired state",
                     email["id"],
                 )
                 return 1
 
-            self.gmail.users().messages().modify(
-                userId="me",
-                id=email["id"],
-                body=body,
-            ).execute()
-
+            self.gmail.modify_message(
+                email["id"], add_label_ids=add, remove_label_ids=rem
+            )
             LOG.info(
                 "    [ACTION] move_message -> email %s to '%s' (APPLIED) add=%s remove=%s",
                 email["id"],
                 mailbox,
-                body["addLabelIds"],
-                body["removeLabelIds"],
+                add,
+                rem,
             )
             return 1
         except Exception as e:
@@ -221,15 +210,13 @@ class RulesProcessor:
             )
             return 0
 
-    # -------------------- Labels Helpers --------------------
+    # -------- Labels helpers --------
 
     def _warm_labels_cache(self) -> None:
-        """Load all labels into a name->id cache once."""
         if self._labels_loaded or self.gmail is None:
             return
         try:
-            res = self.gmail.users().labels().list(userId="me").execute()
-            labels = res.get("labels", []) or []
+            labels = self.gmail.list_labels()
             for l in labels:
                 name = (l.get("name") or "").strip()
                 if not name:
@@ -243,32 +230,18 @@ class RulesProcessor:
     def _resolve_move_target(self, mailbox: str):
         """
         Returns (label_id, remove_inbox_flag).
-        - If mailbox == 'Inbox' (case-insensitive), return ('INBOX', False)
-        - For other names, ensure/create user label and plan to remove INBOX (archive).
+        - 'Inbox' => ('INBOX', False)
+        - otherwise ensure/create user label, remove INBOX (archive)
         """
         if mailbox.lower() == "inbox":
             return "INBOX", False
 
-        # Try existing
         label_id = self._label_cache.get(mailbox.lower())
         if label_id:
             return label_id, True
 
-        # Create user label if not present
         try:
-            created = (
-                self.gmail.users()
-                .labels()
-                .create(
-                    userId="me",
-                    body={
-                        "name": mailbox,
-                        "labelListVisibility": "labelShow",
-                        "messageListVisibility": "show",
-                    },
-                )
-                .execute()
-            )
+            created = self.gmail.create_label(mailbox)
             label_id = created.get("id")
             if label_id:
                 self._label_cache[mailbox.lower()] = label_id
@@ -277,5 +250,5 @@ class RulesProcessor:
         except Exception as e:
             LOG.error("Failed to create label '%s': %s", mailbox, e)
 
-        # Fallback: no label id (will no-op add), still archive by removing INBOX to simulate move
+        # Fallback: archive only
         return None, True
