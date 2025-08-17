@@ -5,8 +5,6 @@ from gmail_helper.api.email_service.router import EmailRouter
 from gmail_helper.api.email_service.service import EmailService
 from gmail_helper.common.config import Config
 from gmail_helper.common.contracts.emails_interface import EmailsInterface
-
-# Simulated RPC: bind contract to implementation today
 from gmail_helper.stores.emails_store import EmailsStore
 
 

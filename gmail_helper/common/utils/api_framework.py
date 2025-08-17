@@ -2,16 +2,12 @@ import functools
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
 
-# Export symbols to abstract fastapi in implementors code
-from fastapi import APIRouter, BackgroundTasks, Body, Cookie, Depends
+from fastapi import APIRouter, Depends
 from fastapi import FastAPI as RootRouter
 from fastapi import Request, Response, status
 from fastapi.datastructures import Default, DefaultPlaceholder
-from fastapi.middleware import Middleware
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, BaseRoute
-from fastapi.testclient import TestClient
 
 from gmail_helper.common.utils.exceptions import Reason, ServiceException
 from gmail_helper.common.utils.logger import get_logger
