@@ -46,8 +46,6 @@ class EmailsStore(EmailsInterface):
         finally:
             conn.close()
 
-    # --- EmailsInterface methods ---
-
     def insert_email(self, email: Dict) -> None:
         with self._conn() as conn:
             conn.execute(self.UPSERT_SQL, email)

@@ -1,7 +1,6 @@
 import functools
 import inspect
-from typing import (Any, Callable, Dict, List, Optional, Sequence, Type,
-                    TypeVar, Union)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
 
 # Export symbols to abstract fastapi in implementors code
 from fastapi import APIRouter, BackgroundTasks, Body, Cookie, Depends
@@ -285,9 +284,7 @@ def api_put(
 TClass = TypeVar("TClass", bound=object)
 
 
-def routers_from_class(
-    cls: Type[TClass], factory: Callable[[], TClass]
-) -> List[APIRouter]:
+def routers_from_class(cls: Type[TClass], factory: Callable[[], TClass]) -> List[APIRouter]:
     routers = cls.__dict__.get("__api_router__", [{}])
     result = list()
     for params in routers:
@@ -326,9 +323,7 @@ def add_routes_from_class(
 
 def check_compatibility(route: dict, attribute_name: str):
     if route.get(attribute_name):
-        raise ValueError(
-            f"Can not use {attribute_name} with root router, use a child router instead"
-        )
+        raise ValueError(f"Can not use {attribute_name} with root router, use a child router instead")
     elif attribute_name in route:
         route.pop(attribute_name)
 
@@ -340,9 +335,7 @@ def _create_wrapper(func, self_factory):
     functools.update_wrapper(wrapper, func)
     signature = inspect.signature(func)
     new_parameters = list(signature.parameters.values())[1:]
-    new_signature = inspect.Signature(
-        new_parameters, return_annotation=signature.return_annotation
-    )
+    new_signature = inspect.Signature(new_parameters, return_annotation=signature.return_annotation)
     wrapper.__signature__ = new_signature
     return wrapper
 
@@ -355,17 +348,13 @@ def add_routers(
     prefix: str = "",
 ):
     for r in routers:
-        router.include_router(
-            r, deprecated=deprecated, dependencies=dependencies, prefix=prefix
-        )
+        router.include_router(r, deprecated=deprecated, dependencies=dependencies, prefix=prefix)
     router.add_exception_handler(ServiceException, exception_handler)
     return router
 
 
 def exception_handler(request: Request, exc: ServiceException):
-    LOG.critical(
-        f"{request.method} {request.url} ({request.query_params}): {exc}", exc_info=True
-    )
+    LOG.critical(f"{request.method} {request.url} ({request.query_params}): {exc}", exc_info=True)
     mapping = {
         Reason.BAD_REQUEST.name: status.HTTP_400_BAD_REQUEST,
         Reason.ENTITY_NOT_FOUND.name: status.HTTP_404_NOT_FOUND,
@@ -378,9 +367,5 @@ def exception_handler(request: Request, exc: ServiceException):
         Reason.INVALID_DATA.name: status.HTTP_400_BAD_REQUEST,
         Reason.CONFLICT.name: status.HTTP_409_CONFLICT,
     }
-    status_code = mapping.get(
-        exc.get_code().name, status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
-    return JSONResponse(
-        status_code=status_code, content={"message": str(exc.get_message())}
-    )
+    status_code = mapping.get(exc.get_code().name, status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return JSONResponse(status_code=status_code, content={"message": str(exc.get_message())})

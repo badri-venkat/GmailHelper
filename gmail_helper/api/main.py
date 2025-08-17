@@ -3,8 +3,7 @@ from fastapi import FastAPI
 from gmail_helper.api.containers import ApiContainer
 from gmail_helper.api.email_service.router import EmailRouter
 from gmail_helper.common.config import config
-from gmail_helper.common.utils.api_framework import (add_routers,
-                                                     routers_from_class)
+from gmail_helper.common.utils.api_framework import add_routers, routers_from_class
 
 # Initialize DI container
 container = ApiContainer()

@@ -1,11 +1,13 @@
 from dependency_injector import containers, providers
 
+from gmail_helper.api.email_service.orchestrator import GmailOrchestrator
 from gmail_helper.api.email_service.router import EmailRouter
 from gmail_helper.api.email_service.service import EmailService
 from gmail_helper.common.config import Config
 from gmail_helper.common.contracts.emails_interface import EmailsInterface
-# Simulated RPC: bind contract to worker implementation today
-from gmail_helper.worker.emails_store import EmailsStore
+
+# Simulated RPC: bind contract to implementation today
+from gmail_helper.stores.emails_store import EmailsStore
 
 
 class ApiContainer(containers.DeclarativeContainer):
@@ -29,6 +31,11 @@ class ApiContainer(containers.DeclarativeContainer):
     # Services
     email_service = providers.Factory(
         EmailService,
+        store=emails_store,
+    )
+
+    orchestrator = providers.Factory(
+        GmailOrchestrator,
         store=emails_store,
     )
 

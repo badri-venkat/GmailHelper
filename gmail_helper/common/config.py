@@ -13,9 +13,7 @@ class Config:
     DB_PATH = os.getenv("DB_PATH", str(PROJECT_ROOT / "emails.db"))
 
     # OAuth files at repo root by default
-    CREDENTIALS_FILE = os.getenv(
-        "GMAIL_CREDENTIALS", str(PROJECT_ROOT / ".credentials.json")
-    )
+    CREDENTIALS_FILE = os.getenv("GMAIL_CREDENTIALS", str(PROJECT_ROOT / ".credentials.json"))
     TOKEN_FILE = os.getenv("GMAIL_TOKEN", str(PROJECT_ROOT / ".token.json"))
 
     # Gmail scopes

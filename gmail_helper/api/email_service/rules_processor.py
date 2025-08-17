@@ -3,10 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from gmail_helper.common.config import config
-from gmail_helper.common.contracts.rules_contract import (ActionType,
-                                                          DatePredicate,
-                                                          FieldName, Rule,
-                                                          StringPredicate)
+from gmail_helper.common.contracts.rules_contract import ActionType, DatePredicate, FieldName, Rule, StringPredicate
 from gmail_helper.common.services.gmail_service import GmailClient
 from gmail_helper.common.utils.logger import get_logger
 
@@ -19,16 +16,12 @@ class RulesProcessor:
     Uses GmailClient for real actions (mark_as_read/unread, move via labels).
     """
 
-    def __init__(
-        self, store, rules_file: str = None, gmail_client: Optional[GmailClient] = None
-    ):
+    def __init__(self, store, rules_file: str = None, gmail_client: Optional[GmailClient] = None):
         self.store = store
         self.rules_file = rules_file or config.RULES_FILE
         self.gmail = gmail_client  # GmailClient or None
         self._label_cache: Dict[str, str] = {}
         self._labels_loaded = False
-
-    # -------- Rules lifecycle --------
 
     def load_rules(self) -> List[Rule]:
         with open(self.rules_file, "r") as f:
@@ -57,8 +50,6 @@ class RulesProcessor:
 
         LOG.info("Completed rules run: %d actions executed/logged", total_actions)
         return total_actions
-
-    # -------- Matching --------
 
     def _matches(self, rule: Rule, email: dict) -> bool:
         results = [self._eval_condition(c, email) for c in rule.conditions]
@@ -111,8 +102,6 @@ class RulesProcessor:
 
         return False
 
-    # -------- Actions --------
-
     def _execute_actions(self, email: dict, rule: Rule) -> int:
         count = 0
         for action in rule.actions:
@@ -136,9 +125,7 @@ class RulesProcessor:
             LOG.info("    [ACTION] mark_as_read (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
-            self.gmail.modify_message(
-                email["id"], add_label_ids=[], remove_label_ids=["UNREAD"]
-            )
+            self.gmail.modify_message(email["id"], add_label_ids=[], remove_label_ids=["UNREAD"])
             LOG.info("    [ACTION] mark_as_read -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
@@ -150,9 +137,7 @@ class RulesProcessor:
             LOG.info("    [ACTION] mark_as_unread (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
-            self.gmail.modify_message(
-                email["id"], add_label_ids=["UNREAD"], remove_label_ids=[]
-            )
+            self.gmail.modify_message(email["id"], add_label_ids=["UNREAD"], remove_label_ids=[])
             LOG.info("    [ACTION] mark_as_unread -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
@@ -190,9 +175,7 @@ class RulesProcessor:
                 )
                 return 1
 
-            self.gmail.modify_message(
-                email["id"], add_label_ids=add, remove_label_ids=rem
-            )
+            self.gmail.modify_message(email["id"], add_label_ids=add, remove_label_ids=rem)
             LOG.info(
                 "    [ACTION] move_message -> email %s to '%s' (APPLIED) add=%s remove=%s",
                 email["id"],
@@ -209,8 +192,6 @@ class RulesProcessor:
                 e,
             )
             return 0
-
-    # -------- Labels helpers --------
 
     def _warm_labels_cache(self) -> None:
         if self._labels_loaded or self.gmail is None:

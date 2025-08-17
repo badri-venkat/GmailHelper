@@ -1,18 +1,19 @@
 import os
 
 from gmail_helper.common.utils.logger import get_logger
+from gmail_helper.stores.emails_store import EmailsStore
 
 LOG = get_logger(__name__)
 
 
 from typing import List, Optional
 
+from gmail_helper.api.email_service.rules_processor import RulesProcessor
 from gmail_helper.common.config import config
+from gmail_helper.common.contracts.emails_interface import EmailsInterface
 from gmail_helper.common.services.gmail_service import GmailClient
 from gmail_helper.common.utils.dateutils import parse_rfc2822_to_iso
 from gmail_helper.common.utils.logger import get_logger
-from gmail_helper.worker.emails_store import EmailsStore
-from gmail_helper.worker.rules_processor import RulesProcessor
 
 LOG = get_logger(__name__)
 
@@ -25,10 +26,10 @@ class GmailOrchestrator:
 
     def __init__(
         self,
-        store: Optional[EmailsStore] = None,
+        store: EmailsInterface,
         gmail_client: Optional[GmailClient] = None,
     ):
-        self.store = store or EmailsStore(db_path=config.DB_PATH)
+        self.store = store
         self.gmail = gmail_client or GmailClient()
 
     def fetch_and_store(
@@ -46,10 +47,7 @@ class GmailOrchestrator:
         stored = 0
         for item in msgs:
             full = self.gmail.get_message_metadata(item["id"])
-            headers = {
-                h["name"]: h["value"]
-                for h in full.get("payload", {}).get("headers", [])
-            }
+            headers = {h["name"]: h["value"] for h in full.get("payload", {}).get("headers", [])}
 
             email = {
                 "id": full.get("id", ""),
