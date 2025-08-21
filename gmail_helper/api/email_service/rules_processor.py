@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
-from gmail_helper.common.config import config
 from gmail_helper.common.contracts.rules_contract import ActionType, DatePredicate, FieldName, Rule, StringPredicate
 from gmail_helper.common.services.gmail_service import GmailClient
 from gmail_helper.common.utils.logger import get_logger
@@ -16,10 +15,10 @@ class RulesProcessor:
     Uses GmailClient for real actions (mark_as_read/unread, move via labels).
     """
 
-    def __init__(self, store, rules_file: str = None, gmail_client: Optional[GmailClient] = None):
+    def __init__(self, store, rules_file: str, gmail_client: GmailClient):
         self.store = store
-        self.rules_file = rules_file or config.RULES_FILE
-        self.gmail = gmail_client  # GmailClient or None
+        self.rules_file = rules_file
+        self.gmail = gmail_client
         self._label_cache: Dict[str, str] = {}
         self._labels_loaded = False
 
@@ -114,7 +113,7 @@ class RulesProcessor:
                 count += self._act_move_message(email, mailbox)
             else:
                 LOG.warning(
-                    "    [ACTION] unknown action %s for email %s",
+                    "[ACTION] unknown action %s for email %s",
                     action.type,
                     email["id"],
                 )
@@ -122,26 +121,26 @@ class RulesProcessor:
 
     def _act_mark_read(self, email: dict) -> int:
         if self.gmail is None:
-            LOG.info("    [ACTION] mark_as_read (LOG ONLY) -> email %s", email["id"])
+            LOG.info("[ACTION] mark_as_read (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
             self.gmail.modify_message(email["id"], add_label_ids=[], remove_label_ids=["UNREAD"])
-            LOG.info("    [ACTION] mark_as_read -> email %s (APPLIED)", email["id"])
+            LOG.info("[ACTION] mark_as_read -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
-            LOG.error("    [ACTION] mark_as_read FAILED for %s: %s", email["id"], e)
+            LOG.error("[ACTION] mark_as_read FAILED for %s: %s", email["id"], e)
             return 0
 
     def _act_mark_unread(self, email: dict) -> int:
         if self.gmail is None:
-            LOG.info("    [ACTION] mark_as_unread (LOG ONLY) -> email %s", email["id"])
+            LOG.info("[ACTION] mark_as_unread (LOG ONLY) -> email %s", email["id"])
             return 1
         try:
             self.gmail.modify_message(email["id"], add_label_ids=["UNREAD"], remove_label_ids=[])
-            LOG.info("    [ACTION] mark_as_unread -> email %s (APPLIED)", email["id"])
+            LOG.info("[ACTION] mark_as_unread -> email %s (APPLIED)", email["id"])
             return 1
         except Exception as e:
-            LOG.error("    [ACTION] mark_as_unread FAILED for %s: %s", email["id"], e)
+            LOG.error("[ACTION] mark_as_unread FAILED for %s: %s", email["id"], e)
             return 0
 
     def _act_move_message(self, email: dict, mailbox: str) -> int:
@@ -152,7 +151,7 @@ class RulesProcessor:
         """
         if self.gmail is None:
             LOG.info(
-                "    [ACTION] move_message (LOG ONLY) -> email %s to '%s'",
+                "[ACTION] move_message (LOG ONLY) -> email %s to '%s'",
                 email["id"],
                 mailbox,
             )
@@ -170,14 +169,14 @@ class RulesProcessor:
 
             if not add and not rem:
                 LOG.info(
-                    "    [ACTION] move_message -> email %s already in desired state",
+                    "[ACTION] move_message -> email %s already in desired state",
                     email["id"],
                 )
                 return 1
 
             self.gmail.modify_message(email["id"], add_label_ids=add, remove_label_ids=rem)
             LOG.info(
-                "    [ACTION] move_message -> email %s to '%s' (APPLIED) add=%s remove=%s",
+                "[ACTION] move_message -> email %s to '%s' (APPLIED) add=%s remove=%s",
                 email["id"],
                 mailbox,
                 add,
@@ -186,7 +185,7 @@ class RulesProcessor:
             return 1
         except Exception as e:
             LOG.error(
-                "    [ACTION] move_message FAILED for %s to '%s': %s",
+                "[ACTION] move_message FAILED for %s to '%s': %s",
                 email["id"],
                 mailbox,
                 e,

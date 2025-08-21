@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 
 from gmail_helper.api.containers import ApiContainer

@@ -1,7 +1,7 @@
 {
   "rules": [
     {
-      "description": "From contains hdfc alerts → mark read & move",
+      "description": "GitHub alerts → mark read & move",
       "match": "all",
       "conditions": [
         {"field": "From", "predicate": "contains", "value": "noreply@github.com"},
@@ -9,7 +9,7 @@
       ],
       "actions": [
         {"type": "mark_as_read"},
-        {"type": "move_message", "mailbox": "Notifications"}
+        {"type": "move_message", "mailbox": "GitHub-Notifications"}
       ]
     }
   ]

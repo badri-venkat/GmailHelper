@@ -6,7 +6,6 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from gmail_helper.common.config import config
 from gmail_helper.common.utils.logger import get_logger
 
 LOG = get_logger(__name__)
@@ -20,22 +19,20 @@ class GmailClient:
 
     def __init__(
         self,
-        credentials_file: Optional[str] = None,
-        token_file: Optional[str] = None,
-        scopes: Optional[List[str]] = None,
+        credentials_file: str,
+        token_file: str,
+        scopes: list[str],
     ):
-        self.credentials_file = credentials_file or config.CREDENTIALS_FILE
-        self.token_file = token_file or config.TOKEN_FILE
-        self.scopes = scopes or config.SCOPES
-        self._svc = None
-
-    # -------- Auth / Service --------
+        self.credentials_file = credentials_file
+        self.token_file = token_file
+        self.scopes = scopes
+        self._service = None
 
     def service(self):
         """Return authenticated gmail service (lazy)."""
-        if self._svc is None:
-            self._svc = self._authenticate()
-        return self._svc
+        if self._service is None:
+            self._service = self._authenticate()
+        return self._service
 
     def _authenticate(self):
         creds = None
