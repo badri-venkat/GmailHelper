@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 
 from gmail_helper.api.containers import ApiContainer
@@ -22,3 +24,14 @@ if __name__ == "__main__":
         port=config.API_PORT,
         reload=True,
     )
+
+
+def test_run_mail_collection():
+    orchestrator = container.orchestrator()
+    orchestrator.fetch_and_store()
+
+
+def test_run_rules():
+    orchestrator = container.orchestrator()
+    if os.path.exists(config.RULES_FILE):
+        orchestrator.run_rules()

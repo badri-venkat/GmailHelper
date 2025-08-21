@@ -27,10 +27,12 @@ class GmailOrchestrator:
     def __init__(
         self,
         store: EmailsInterface,
+        rules_processor: RulesProcessor,
         gmail_client: Optional[GmailClient] = None,
     ):
         self.store = store
-        self.gmail = gmail_client or GmailClient()
+        self.gmail = gmail_client
+        self.rules_processor = rules_processor
 
     def fetch_and_store(
         self,
@@ -63,18 +65,5 @@ class GmailOrchestrator:
         LOG.info("Stored %d messages into DB at %s", stored, config.DB_PATH)
         return stored
 
-    def run_rules(self, rules_file: Optional[str] = None, limit: int = 20) -> int:
-        rp = RulesProcessor(
-            store=self.store,
-            rules_file=rules_file or config.RULES_FILE,
-            gmail_client=self.gmail,  # pass the shared client
-        )
-        return rp.apply_rules(limit=limit)
-
-
-if __name__ == "__main__":
-    store = EmailsStore(db_path="emails.db")
-    orch = GmailOrchestrator(store)
-    # orch.fetch_and_store()
-    if os.path.exists(config.RULES_FILE):
-        orch.run_rules()
+    def run_rules(self, limit: int = 20) -> int:
+        return self.rules_processor.apply_rules(limit=limit)
