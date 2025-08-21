@@ -1,17 +1,21 @@
+import os
 import unittest
 
-from gmail_helper.api.email_fetcher.service import GmailFetcherService
-from gmail_helper.api.email_fetcher.store import EmailsStore
+from gmail_helper.api.containers import ApiContainer
+from gmail_helper.common.config import config
 
 
 class TestEmailFetch(unittest.TestCase):
     def setUp(self):
-        self.store = EmailsStore(db_name="emails.db")
-        self.service = GmailFetcherService(self.store)
+        self.container = ApiContainer()
 
-    def test_store_fetch(self):
-        for row in self.store.select_most_recent_k_mails(10):
-            print(row)
+    def test_run_mail_collection(self):
+        """Test #1 to oauth and fetch recent 20 mails using GmailApi"""
+        orchestrator = self.container.orchestrator()
+        orchestrator.fetch_and_store()
 
-    def test_gmail_fetch(self):
-        self.service.orchestrate()
+    def test_run_rules(self):
+        """Test #2 to apply rules configured in rules.json"""
+        orchestrator = self.container.orchestrator()
+        if os.path.exists(config.RULES_FILE):
+            orchestrator.run_rules()
